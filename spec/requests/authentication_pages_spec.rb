@@ -46,12 +46,15 @@ describe "Authentication" do
     describe "for non-signed-in users" do
       let(:user) { FactoryGirl.create(:user) }
 
+      describe "should no have profile inks" do
+        it { should_not have_link('Profile',     href: user_path(user)) }
+        it { should_not have_link('Settings',    href: edit_user_path(user)) }
+      end
+
       describe "when attempting to visit a protected page" do
         before do
           visit edit_user_path(user)
-          fill_in "Email",    with: user.email
-          fill_in "Password", with: user.password
-          click_button "Sign in"
+          sign_in user
         end
 
         describe "after signing in" do
@@ -73,7 +76,7 @@ describe "Authentication" do
           before { patch user_path(user) }
           specify { expect(response).to redirect_to(signin_path) }
         end
-        
+
         describe "visiting the user index" do
           before { visit users_path }
           it { should have_title('Sign in') }
@@ -96,6 +99,27 @@ describe "Authentication" do
         specify { expect(response).to redirect_to(root_url) }
       end
     end
+
+    describe "as signed in user" do
+    let(:user) { FactoryGirl.create(:user) }
+    before { sign_in user, no_capybara: true }
+
+      describe "should not have access to new method" do
+        before { get new_user_path }
+        specify { expect(response).to redirect_to(root_url) }
+      end
+
+      describe "should not have access to create method" do
+        before { post user_path(@user) }
+        specify { expect(response).to redirect_to(root_url) }
+      end
+
+      describe "should not have access to create method 2 - signup" do
+        before { get signup_path }
+        specify { expect(response).to redirect_to(root_url) }
+      end
+    end
+
     
     describe "as non-admin user" do
       let(:user) { FactoryGirl.create(:user) }
